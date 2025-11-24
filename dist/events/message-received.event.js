@@ -25,8 +25,7 @@ export async function messageReceived(client, messages, botInfo, messageCache) {
     const first = list[0];
 
     // 2) Normaliza IDs de host e chat
-    const hostIdRaw = botInfo?.host_number || botInfo?.host_jid || botInfo?.hostId;
-    const hostId = hostIdRaw ? jidNormalizedUser(hostIdRaw) : undefined;
+    const hostId = waUtil.getNormalizedBotId(botInfo, client);
 
     const chatIdRaw = first?.key?.remoteJid;
     const chatId = chatIdRaw ? jidNormalizedUser(chatIdRaw) : undefined;

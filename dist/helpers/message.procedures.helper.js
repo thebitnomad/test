@@ -43,7 +43,7 @@ export function isIgnoredByAdminMode(bot, message) {
     return (bot.admin_mode && !message.isBotAdmin);
 }
 export async function isBotLimitedByGroupRestricted(group, botInfo) {
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     return (group.restricted && !isBotGroupAdmin);
 }
 export async function sendPrivateWelcome(client, botInfo, message) {
@@ -124,7 +124,7 @@ export async function isCommandBlockedGroup(client, group, botInfo, message) {
 export async function isDetectedByWordFilter(client, botInfo, group, message) {
     const { isGroupAdmin, body, caption } = message;
     const groupAdmins = await groupController.getAdminsIds(group.id);
-    const isBotAdmin = groupAdmins.includes(botInfo.host_number);
+    const isBotAdmin = groupAdmins.includes(waUtil.getNormalizedBotId(botInfo, client));
     const userText = body || caption;
     const userTextNoFormatting = removeFormatting(userText);
     const userWords = userTextNoFormatting.split(' ');
@@ -139,7 +139,7 @@ export async function autoReply(client, botInfo, group, message) {
     if (group.auto_reply.status) {
         const { body, caption } = message;
         const groupAdmins = await groupController.getAdminsIds(group.id);
-        const isBotGroupAdmin = groupAdmins.includes(botInfo.host_number);
+        const isBotGroupAdmin = groupAdmins.includes(waUtil.getNormalizedBotId(botInfo, client));
         const userText = body || caption;
         const userTextNoFormatting = removeFormatting(userText);
         const userWords = userTextNoFormatting.split(' ').map(word => word.toLowerCase());
@@ -156,7 +156,7 @@ export async function isDetectedByAntiLink(client, botInfo, group, message) {
     const { body, caption, isGroupAdmin } = message;
     const userText = body || caption;
     const groupAdmins = await groupController.getAdminsIds(group.id);
-    const isBotAdmin = groupAdmins.includes(botInfo.host_number);
+    const isBotAdmin = groupAdmins.includes(waUtil.getNormalizedBotId(botInfo, client));
     if (group.antilink.status && !isBotAdmin) {
         await groupController.setAntiLink(group.id, false);
     }

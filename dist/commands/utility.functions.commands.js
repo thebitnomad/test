@@ -669,7 +669,8 @@ export async function ouvirCommand(client, botInfo, message, group) {
     else if (message.quotedMessage?.media?.seconds && message.quotedMessage?.media?.seconds > 90) {
         throw new Error(utilityCommands.ouvir.msgs.error_audio_limit);
     }
-    let audioBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, "buffer", {});
+    const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
+    let audioBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     let replyText = await audioUtil.audioTranscription(audioBuffer);
     await waUtil.replyText(client, message.chat_id, buildText(utilityCommands.ouvir.msgs.reply, replyText), message.quotedMessage.wa_message, { expiration: message.expiration });
 }
@@ -678,11 +679,13 @@ export async function qualmusicaCommand(client, botInfo, message, group) {
     if (messageType != "videoMessage" && messageType != "audioMessage") {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    const messageData = message.isQuoted ? message.quotedMessage?.wa_message : message.wa_message;
+    const messageData = message.isQuoted
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     if (!messageData) {
         throw new Error(utilityCommands.qualmusica.msgs.error_message);
     }
-    const messageMediaBuffer = await downloadMediaMessage(messageData, "buffer", {});
+    const messageMediaBuffer = await downloadMediaMessage(messageData, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     await waUtil.replyText(client, message.chat_id, utilityCommands.qualmusica.msgs.wait, message.wa_message, { expiration: message.expiration });
     const musicResult = await audioUtil.musicRecognition(messageMediaBuffer);
     if (!musicResult) {
@@ -776,10 +779,12 @@ export async function upimgCommand(client, botInfo, message, group) {
     }
     let imageBuffer;
     if (message.isQuoted && message.quotedMessage?.wa_message) {
-        imageBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, 'buffer', {});
+        const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(quotedMessage, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     else {
-        imageBuffer = await downloadMediaMessage(message.wa_message, 'buffer', {});
+        const messageSource = waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(messageSource, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     let imageUrl = await imageUtil.uploadImage(imageBuffer);
     await waUtil.replyText(client, message.chat_id, buildText(utilityCommands.upimg.msgs.reply, imageUrl), message.wa_message, { expiration: message.expiration });
@@ -798,7 +803,9 @@ export async function rbgCommand(client, botInfo, message, group) {
     }
     let messageData = {
         type: (message.isMedia) ? message.type : message.quotedMessage?.type,
-        wa_message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        wa_message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (!messageData.type || !messageData.wa_message) {
         throw new Error(utilityCommands.rbg.msgs.error_message);
@@ -807,7 +814,7 @@ export async function rbgCommand(client, botInfo, message, group) {
         throw new Error(utilityCommands.rbg.msgs.error_only_image);
     }
     await waUtil.replyText(client, message.chat_id, utilityCommands.rbg.msgs.wait, message.wa_message, { expiration: message.expiration });
-    let imageBuffer = await downloadMediaMessage(messageData.wa_message, "buffer", {});
+    let imageBuffer = await downloadMediaMessage(messageData.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     let replyImageBuffer = await imageUtil.removeBackground(imageBuffer);
     await waUtil.replyFileFromBuffer(client, message.chat_id, 'imageMessage', replyImageBuffer, '', message.wa_message, { expiration: message.expiration });
 }
@@ -817,7 +824,9 @@ export async function audioCommand(client, botInfo, message, group) {
     }
     let messageData = {
         type: (message.isMedia) ? message.type : message.quotedMessage?.type,
-        wa_message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        wa_message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (!messageData.type || !messageData.wa_message) {
         throw new Error(utilityCommands.audio.msgs.error_message);
@@ -825,7 +834,7 @@ export async function audioCommand(client, botInfo, message, group) {
     else if (messageData.type != "videoMessage") {
         throw new Error(utilityCommands.audio.msgs.error_only_video);
     }
-    let videoBuffer = await downloadMediaMessage(messageData.wa_message, "buffer", {});
+    let videoBuffer = await downloadMediaMessage(messageData.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     let replyAudioBuffer = await extractAudioFromVideo('buffer', videoBuffer);
     await waUtil.replyFileFromBuffer(client, message.chat_id, 'audioMessage', replyAudioBuffer, '', message.wa_message, { expiration: message.expiration, mimetype: 'audio/mpeg' });
 }
@@ -850,7 +859,8 @@ export async function efeitoaudioCommand(client, botInfo, message, group) {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
     const effectSelected = message.text_command.trim().toLowerCase();
-    const audioBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, "buffer", {});
+    const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
+    const audioBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     const replyAudioBuffer = await audioUtil.audioModified(audioBuffer, effectSelected);
     await waUtil.replyFileFromBuffer(client, message.chat_id, 'audioMessage', replyAudioBuffer, '', message.wa_message, { expiration: message.expiration, mimetype: 'audio/mpeg' });
 }
@@ -1304,7 +1314,9 @@ export async function dddCommand(client, botInfo, message, group) {
 export async function qualanimeCommand(client, botInfo, message, group) {
     const messageData = {
         type: (message.isQuoted) ? message.quotedMessage?.type : message.type,
-        message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (messageData.type != "imageMessage") {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
@@ -1313,7 +1325,7 @@ export async function qualanimeCommand(client, botInfo, message, group) {
         throw new Error(utilityCommands.qualanime.msgs.error_message);
     }
     await waUtil.replyText(client, message.chat_id, utilityCommands.qualanime.msgs.wait, message.wa_message, { expiration: message.expiration });
-    const imageBuffer = await downloadMediaMessage(messageData.message, "buffer", {});
+    const imageBuffer = await downloadMediaMessage(messageData.message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     const animeInfo = await imageUtil.animeRecognition(imageBuffer);
     if (!animeInfo) {
         throw new Error(utilityCommands.qualanime.msgs.error_not_found);

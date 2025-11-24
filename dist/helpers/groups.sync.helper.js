@@ -62,7 +62,7 @@ async function syncResources(client) {
   const botInfo = new BotController().getBot();
 
   // hostId canônico
-  const hostId = botInfo?.host_number ? nUser(botInfo.host_number) : undefined;
+  const hostId = waUtil.getNormalizedBotId(botInfo, client);
 
   for (const g of currentGroups) {
     const groupId = nChat(g.id);

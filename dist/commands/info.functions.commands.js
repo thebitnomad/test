@@ -33,7 +33,8 @@ export async function infoCommand(client, botInfo, message, group) {
         replyText += buildText(infoCommands.info.msgs.reply_item_blocked_count, blockedUsers.length);
     }
     //RESPOSTA
-    await waUtil.getProfilePicUrl(client, botInfo.host_number).then(async (pic) => {
+    const botId = waUtil.getNormalizedBotId(botInfo, client);
+    await waUtil.getProfilePicUrl(client, botId).then(async (pic) => {
         if (pic) {
             await waUtil.replyFileFromUrl(client, message.chat_id, 'imageMessage', pic, replyText, message.wa_message, { expiration: message.expiration });
         }

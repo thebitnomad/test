@@ -38,7 +38,7 @@ export async function grupoCommand(client, botInfo, message, group) {
 }
 export async function avisoCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     let targetUserId;
     let replyText;
     if (!message.isGroupAdmin) {
@@ -56,7 +56,7 @@ export async function avisoCommand(client, botInfo, message, group) {
     else {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    const isBotTarget = botInfo.host_number == targetUserId;
+    const isBotTarget = waUtil.getNormalizedBotId(botInfo, client) == targetUserId;
     const isAdminTarget = await groupController.isParticipantAdmin(group.id, targetUserId);
     if (isBotTarget) {
         throw new Error(groupCommands.aviso.msgs.error_warning_bot);
@@ -82,7 +82,7 @@ export async function avisoCommand(client, botInfo, message, group) {
 }
 export async function rmavisoCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     let targetUserId;
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
@@ -116,7 +116,7 @@ export async function rmavisoCommand(client, botInfo, message, group) {
 }
 export async function zeraravisosCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -129,7 +129,7 @@ export async function zeraravisosCommand(client, botInfo, message, group) {
 }
 export async function addfiltrosCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -153,7 +153,7 @@ export async function addfiltrosCommand(client, botInfo, message, group) {
 }
 export async function rmfiltrosCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -177,7 +177,7 @@ export async function rmfiltrosCommand(client, botInfo, message, group) {
 }
 export async function fotogrupoCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -189,17 +189,19 @@ export async function fotogrupoCommand(client, botInfo, message, group) {
     }
     let imageBuffer;
     if (message.isQuoted && message.quotedMessage) {
-        imageBuffer = await downloadMediaMessage(message.quotedMessage?.wa_message, "buffer", {});
+        const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     else {
-        imageBuffer = await downloadMediaMessage(message.wa_message, "buffer", {});
+        const messageSource = waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(messageSource, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     await waUtil.updateProfilePic(client, group.id, imageBuffer);
     await waUtil.replyText(client, group.id, groupCommands.fotogrupo.msgs.reply, message.wa_message, { expiration: message.expiration });
 }
 export async function addlistaCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     let targetUserId;
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
@@ -219,7 +221,7 @@ export async function addlistaCommand(client, botInfo, message, group) {
     else {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    if (targetUserId == botInfo.host_number) {
+    if (targetUserId == waUtil.getNormalizedBotId(botInfo, client)) {
         throw new Error(groupCommands.addlista.msgs.error_add_bot);
     }
     else if (await groupController.isParticipantAdmin(group.id, targetUserId)) {
@@ -237,7 +239,7 @@ export async function addlistaCommand(client, botInfo, message, group) {
 }
 export async function rmlistaCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     let targetUserId;
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
@@ -264,7 +266,7 @@ export async function rmlistaCommand(client, botInfo, message, group) {
 export async function listanegraCommand(client, botInfo, message, group) {
     const userController = new UserController();
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -285,7 +287,7 @@ export async function listanegraCommand(client, botInfo, message, group) {
 }
 export async function addCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -310,7 +312,7 @@ export async function addCommand(client, botInfo, message, group) {
 }
 export async function banCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -346,7 +348,7 @@ export async function banCommand(client, botInfo, message, group) {
 }
 export async function promoverCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -377,7 +379,7 @@ export async function promoverCommand(client, botInfo, message, group) {
 }
 export async function rebaixarCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -396,7 +398,7 @@ export async function rebaixarCommand(client, botInfo, message, group) {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
     for (let userId of targetUsers) {
-        if (userId == botInfo.host_number || userId == group.owner) {
+        if (userId == waUtil.getNormalizedBotId(botInfo, client) || userId == group.owner) {
             replyText += buildText(groupCommands.rebaixar.msgs.reply_item_error, waUtil.removeWhatsappSuffix(userId));
         }
         else if (await groupController.isParticipantAdmin(group.id, userId)) {
@@ -477,7 +479,7 @@ export async function linkCommand(client, botInfo, message, group) {
   // Força atualização do metadata
   await groupController.refreshGroup(group.id);
 
-  const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+  const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
 
   if (!message.isGroupAdmin) {
     throw new Error(botTexts.permission.admin_group_only);
@@ -493,7 +495,7 @@ export async function linkCommand(client, botInfo, message, group) {
 }
 export async function rlinkCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -508,7 +510,7 @@ export async function rlinkCommand(client, botInfo, message, group) {
 }
 export async function restritoCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -521,7 +523,7 @@ export async function restritoCommand(client, botInfo, message, group) {
 }
 export async function autorespCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -534,7 +536,7 @@ export async function autorespCommand(client, botInfo, message, group) {
 }
 export async function respostasCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -551,7 +553,7 @@ export async function respostasCommand(client, botInfo, message, group) {
 }
 export async function addrespCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -575,7 +577,7 @@ export async function addrespCommand(client, botInfo, message, group) {
 }
 export async function rmrespCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -601,7 +603,7 @@ export async function rmrespCommand(client, botInfo, message, group) {
 }
 export async function antilinkCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -614,7 +616,7 @@ export async function antilinkCommand(client, botInfo, message, group) {
 }
 export async function addexlinkCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -639,7 +641,7 @@ export async function addexlinkCommand(client, botInfo, message, group) {
 }
 export async function rmexlinkCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -682,7 +684,7 @@ export async function bemvindoCommand(client, botInfo, message, group) {
 }
 export async function antifakeCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -695,7 +697,7 @@ export async function antifakeCommand(client, botInfo, message, group) {
 }
 export async function addexfakeCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -734,7 +736,7 @@ export async function addexfakeCommand(client, botInfo, message, group) {
 }
 export async function rmexfakeCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -776,7 +778,7 @@ export async function rmexfakeCommand(client, botInfo, message, group) {
 }
 export async function antifloodCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }
@@ -803,7 +805,7 @@ export async function antifloodCommand(client, botInfo, message, group) {
 }
 export async function apgCommand(client, botInfo, message, group) {
     const groupController = new GroupController();
-    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+    const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
     if (!message.isGroupAdmin) {
         throw new Error(botTexts.permission.admin_group_only);
     }

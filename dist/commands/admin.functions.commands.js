@@ -44,7 +44,7 @@ export async function gruposCommand(client, botInfo, message, group) {
         const groupNumber = currentGroups.indexOf(group) + 1;
         const adminsGroup = await groupController.getAdmins(group.id);
         const participantsGroup = await groupController.getParticipants(group.id);
-        const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, botInfo.host_number);
+        const isBotGroupAdmin = await groupController.isParticipantAdmin(group.id, waUtil.getNormalizedBotId(botInfo, client));
         const linkGroupCommand = isBotGroupAdmin ? `${botInfo.prefix}linkgrupo ${groupNumber}` : '----';
         replyText += buildText(adminCommands.grupos.msgs.reply_item, groupNumber, group.name, participantsGroup.length, adminsGroup.length, isBotGroupAdmin ? "Sim" : "Não", linkGroupCommand, groupNumber);
     }
@@ -75,7 +75,7 @@ export async function linkgrupoCommand(client, botInfo, message, group) {
     if (!chosenGroupNumber || !currentGroups[indexGroup]) {
         throw new Error(adminCommands.linkgrupo.msgs.error_not_found);
     }
-    else if (!await groupController.isParticipantAdmin(currentGroups[indexGroup].id, botInfo.host_number)) {
+    else if (!await groupController.isParticipantAdmin(currentGroups[indexGroup].id, waUtil.getNormalizedBotId(botInfo, client))) {
         throw new Error(adminCommands.linkgrupo.msgs.error_bot_not_admin);
     }
     const inviteLink = await waUtil.getGroupInviteLink(client, currentGroups[indexGroup].id);
@@ -340,12 +340,14 @@ export async function fotobotCommand(client, botInfo, message, group) {
     if (message.type != 'imageMessage' && message.quotedMessage?.type != 'imageMessage') {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    const messageData = (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message;
+    const messageData = (message.isQuoted)
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     if (!messageData) {
         throw new Error(adminCommands.fotobot.msgs.error_message);
     }
-    let imageBuffer = await downloadMediaMessage(messageData, "buffer", {});
-    await waUtil.updateProfilePic(client, botInfo.host_number, imageBuffer);
+    let imageBuffer = await downloadMediaMessage(messageData, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+    await waUtil.updateProfilePic(client, waUtil.getNormalizedBotId(botInfo, client), imageBuffer);
     await waUtil.replyText(client, message.chat_id, adminCommands.fotobot.msgs.reply, message.wa_message, { expiration: message.expiration });
 }
 export async function nomebotCommand(client, botInfo, message, group) {
