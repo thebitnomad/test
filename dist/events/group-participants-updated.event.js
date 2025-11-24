@@ -2,7 +2,7 @@
 import { buildText, showConsoleError } from '../utils/general.util.js';
 import { GroupController } from '../controllers/group.controller.js';
 import botTexts from '../helpers/bot.texts.helper.js';
-import { removeParticipant, sendTextWithMentions, removeWhatsappSuffix, addWhatsappSuffix } from '../utils/whatsapp.util.js';
+import { removeParticipant, sendTextWithMentions, removeWhatsappSuffix, addWhatsappSuffix, getNormalizedBotId } from '../utils/whatsapp.util.js';
 import { jidNormalizedUser } from 'baileys'; // ou '@whiskeysockets/baileys'
 
 export async function groupParticipantsUpdated(client, event, botInfo) {
@@ -13,7 +13,7 @@ export async function groupParticipantsUpdated(client, event, botInfo) {
     const groupId = jidNormalizedUser(event.id);
     const participants = (event.participants || []).map(j => jidNormalizedUser(j));
     const userId = participants[0];
-    const hostId = botInfo?.host_number ? jidNormalizedUser(botInfo.host_number) : undefined;
+    const hostId = getNormalizedBotId(botInfo, client);
     const isBotUpdate = hostId ? participants.includes(hostId) : false;
 
     const group = await groupController.getGroup(groupId);
@@ -57,7 +57,7 @@ export async function groupParticipantsUpdated(client, event, botInfo) {
 
 async function isParticipantBlacklisted(client, botInfo, group, userId) {
   const groupController = new GroupController();
-  const hostId = botInfo?.host_number ? jidNormalizedUser(botInfo.host_number) : undefined;
+  const hostId = getNormalizedBotId(botInfo, client);
 
   // normaliza a blacklist (compat com registros antigos)
   const bl = Array.isArray(group.blacklist) ? group.blacklist.map(j => {
@@ -80,7 +80,7 @@ async function isParticipantFake(client, botInfo, group, userId) {
   if (!group.antifake?.status) return false;
 
   const groupController = new GroupController();
-  const hostId = botInfo?.host_number ? jidNormalizedUser(botInfo.host_number) : undefined;
+  const hostId = getNormalizedBotId(botInfo, client);
   const isBotAdmin = hostId ? await groupController.isParticipantAdmin(group.id, hostId) : false;
   const isGroupAdmin = await groupController.isParticipantAdmin(group.id, userId);
   const isBotNumber = hostId && userId === hostId;

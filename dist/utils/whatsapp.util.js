@@ -102,6 +102,17 @@ export function blockContact(client, userId) {
 export function unblockContact(client, userId) {
     return client.updateBlockStatus(userId, "unblock");
 }
+export function getNormalizedBotId(botInfo, client) {
+    const candidate = botInfo?.host_number || botInfo?.host_jid || botInfo?.hostId || getHostNumber(client);
+    if (!candidate)
+        return "";
+    try {
+        return jidNormalizedUser(candidate);
+    }
+    catch {
+        return candidate.replace(/:[0-9]+/ism, "");
+    }
+}
 export function getHostNumber(client) {
     let id = client.user?.id.replace(/:[0-9]+/ism, '');
     return id || '';
