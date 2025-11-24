@@ -340,6 +340,9 @@ export async function formatWAMessage(m, group, hostId) {
           { userJid: senderQuoted, messageId: quotedStanzaId }
         );
         quotedWAMessage.key.fromMe = (hostIdNorm && hostIdNorm === senderQuoted);
+        if (isGroupMsg && senderQuoted) {
+          quotedWAMessage.key.participant = senderQuoted;
+        }
 
         const bodyQuoted = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text || '';
 
