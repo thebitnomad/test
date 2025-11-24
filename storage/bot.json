@@ -1,0 +1,17 @@
+{
+  "started": 0,
+  "host_number": "",
+  "name": "DEATH'WISHES",
+  "prefix": "!",
+  "executed_cmds": 0,
+  "db_migrated": true,
+  "autosticker": false,
+  "commands_pv": true,
+  "admin_mode": false,
+  "block_cmds": [],
+  "command_rate": {
+    "status": false,
+    "max_cmds_minute": 5,
+    "block_time": 60
+  }
+}
