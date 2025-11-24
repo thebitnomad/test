@@ -340,11 +340,13 @@ export async function fotobotCommand(client, botInfo, message, group) {
     if (message.type != 'imageMessage' && message.quotedMessage?.type != 'imageMessage') {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    const messageData = (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message;
+    const messageData = (message.isQuoted)
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     if (!messageData) {
         throw new Error(adminCommands.fotobot.msgs.error_message);
     }
-    let imageBuffer = await downloadMediaMessage(messageData, "buffer", {});
+    let imageBuffer = await downloadMediaMessage(messageData, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     await waUtil.updateProfilePic(client, botInfo.host_number, imageBuffer);
     await waUtil.replyText(client, message.chat_id, adminCommands.fotobot.msgs.reply, message.wa_message, { expiration: message.expiration });
 }

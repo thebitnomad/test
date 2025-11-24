@@ -189,10 +189,12 @@ export async function fotogrupoCommand(client, botInfo, message, group) {
     }
     let imageBuffer;
     if (message.isQuoted && message.quotedMessage) {
-        imageBuffer = await downloadMediaMessage(message.quotedMessage?.wa_message, "buffer", {});
+        const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     else {
-        imageBuffer = await downloadMediaMessage(message.wa_message, "buffer", {});
+        const messageSource = waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
+        imageBuffer = await downloadMediaMessage(messageSource, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     await waUtil.updateProfilePic(client, group.id, imageBuffer);
     await waUtil.replyText(client, group.id, groupCommands.fotogrupo.msgs.reply, message.wa_message, { expiration: message.expiration });

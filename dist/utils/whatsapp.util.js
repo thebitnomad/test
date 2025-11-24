@@ -28,6 +28,24 @@ export function removePrefix(prefix, command) {
     const commandWithoutPrefix = command.replace(prefix, '');
     return commandWithoutPrefix;
 }
+export function ensureMessageParticipant(message, sender, remoteJid) {
+    if (!message || typeof message !== 'object') {
+        return message;
+    }
+    const normalizedSender = sender ? jidNormalizedUser(sender) : undefined;
+    const messageKey = message.key || (message.key = {});
+    const keyRemoteJid = messageKey.remoteJid || remoteJid;
+    const isGroupMessage = keyRemoteJid?.endsWith('@g.us');
+    if (isGroupMessage) {
+        if (normalizedSender && !messageKey.participant) {
+            messageKey.participant = normalizedSender;
+        }
+        if (remoteJid && !messageKey.remoteJid) {
+            messageKey.remoteJid = remoteJid;
+        }
+    }
+    return message;
+}
 export function getGroupParticipantsByMetadata(group) {
     const { participants } = group;
     let groupParticipants = [];
@@ -340,6 +358,9 @@ export async function formatWAMessage(m, group, hostId) {
           { userJid: senderQuoted, messageId: quotedStanzaId }
         );
         quotedWAMessage.key.fromMe = (hostIdNorm && hostIdNorm === senderQuoted);
+        if (isGroupMsg && senderQuoted) {
+          quotedWAMessage.key.participant = senderQuoted;
+        }
 
         const bodyQuoted = quotedMessage.conversation || quotedMessage.extendedTextMessage?.text || '';
 
