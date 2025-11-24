@@ -678,7 +678,9 @@ export async function qualmusicaCommand(client, botInfo, message, group) {
     if (messageType != "videoMessage" && messageType != "audioMessage") {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    const messageData = message.isQuoted ? message.quotedMessage?.wa_message : message.wa_message;
+    const messageData = message.isQuoted
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     if (!messageData) {
         throw new Error(utilityCommands.qualmusica.msgs.error_message);
     }
@@ -798,7 +800,9 @@ export async function rbgCommand(client, botInfo, message, group) {
     }
     let messageData = {
         type: (message.isMedia) ? message.type : message.quotedMessage?.type,
-        wa_message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        wa_message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (!messageData.type || !messageData.wa_message) {
         throw new Error(utilityCommands.rbg.msgs.error_message);
@@ -817,7 +821,9 @@ export async function audioCommand(client, botInfo, message, group) {
     }
     let messageData = {
         type: (message.isMedia) ? message.type : message.quotedMessage?.type,
-        wa_message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        wa_message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (!messageData.type || !messageData.wa_message) {
         throw new Error(utilityCommands.audio.msgs.error_message);
@@ -1304,7 +1310,9 @@ export async function dddCommand(client, botInfo, message, group) {
 export async function qualanimeCommand(client, botInfo, message, group) {
     const messageData = {
         type: (message.isQuoted) ? message.quotedMessage?.type : message.type,
-        message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        message: (message.isQuoted)
+            ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+            : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id)
     };
     if (messageData.type != "imageMessage") {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));

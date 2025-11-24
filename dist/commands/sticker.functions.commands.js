@@ -12,9 +12,12 @@ export async function sCommand(client, botInfo, message, group) {
     else if (message.args[0] === '2') {
         stickerType = 'contain';
     }
+    const messageSource = (message.isQuoted)
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     let messageData = {
         type: (message.isQuoted) ? message.quotedMessage?.type : message.type,
-        message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message,
+        message: messageSource,
         seconds: (message.isQuoted) ? message.quotedMessage?.media?.seconds : message.media?.seconds
     };
     if (!messageData.type || !messageData.message) {
@@ -38,7 +41,7 @@ export async function simgCommand(client, botInfo, message, group) {
     else if (message.quotedMessage.type != "stickerMessage") {
         throw new Error(stickerCommands.simg.msgs.error_sticker);
     }
-    let messageQuotedData = message.quotedMessage.wa_message;
+    let messageQuotedData = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
     if (messageQuotedData.message?.stickerMessage?.url == "https://web.whatsapp.net") {
         messageQuotedData.message.stickerMessage.url = `https://mmg.whatsapp.net${messageQuotedData.message.stickerMessage.directPath}`;
     }
@@ -47,9 +50,12 @@ export async function simgCommand(client, botInfo, message, group) {
     await waUtil.replyFileFromBuffer(client, message.chat_id, 'imageMessage', imageBuffer, '', message.wa_message, { expiration: message.expiration, mimetype: 'image/png' });
 }
 export async function ssfCommand(client, botInfo, message, group) {
+    const messageSource = (message.isQuoted)
+        ? waUtil.ensureMessageParticipant(message.quotedMessage?.wa_message, message.quotedMessage?.sender, message.chat_id)
+        : waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
     let messageData = {
         type: (message.isQuoted) ? message.quotedMessage?.type : message.type,
-        message: (message.isQuoted) ? message.quotedMessage?.wa_message : message.wa_message
+        message: messageSource
     };
     if (!messageData.type || !messageData.message) {
         throw new Error(stickerCommands.ssf.msgs.error_message);
@@ -98,7 +104,7 @@ export async function snomeCommand(client, botInfo, message, group) {
     if (!pack || !author) {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
-    let messageQuotedData = message.quotedMessage.wa_message;
+    let messageQuotedData = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
     if (!messageQuotedData.message?.stickerMessage) {
         throw new Error(stickerCommands.snome.msgs.error_message);
     }
@@ -116,6 +122,7 @@ export async function autoSticker(client, botInfo, message, group) {
     else if (message.type == "videoMessage" && message.media?.seconds && message.media?.seconds > 9) {
         return;
     }
+
     let mediaBuffer = await downloadMediaMessage(message.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     const authorText = buildText(stickerCommands.s.msgs.author_text, message.pushname);
     let stickerBuffer = await stickerUtil.createSticker(mediaBuffer, { pack: botInfo.name, author: authorText, fps: 9, type: 'resize' });
