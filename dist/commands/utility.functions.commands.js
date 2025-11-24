@@ -669,8 +669,7 @@ export async function ouvirCommand(client, botInfo, message, group) {
     else if (message.quotedMessage?.media?.seconds && message.quotedMessage?.media?.seconds > 90) {
         throw new Error(utilityCommands.ouvir.msgs.error_audio_limit);
     }
-    const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
-    let audioBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+    let audioBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     let replyText = await audioUtil.audioTranscription(audioBuffer);
     await waUtil.replyText(client, message.chat_id, buildText(utilityCommands.ouvir.msgs.reply, replyText), message.quotedMessage.wa_message, { expiration: message.expiration });
 }
@@ -779,12 +778,10 @@ export async function upimgCommand(client, botInfo, message, group) {
     }
     let imageBuffer;
     if (message.isQuoted && message.quotedMessage?.wa_message) {
-        const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
-        imageBuffer = await downloadMediaMessage(quotedMessage, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+        imageBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     else {
-        const messageSource = waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
-        imageBuffer = await downloadMediaMessage(messageSource, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+        imageBuffer = await downloadMediaMessage(message.wa_message, 'buffer', {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     }
     let imageUrl = await imageUtil.uploadImage(imageBuffer);
     await waUtil.replyText(client, message.chat_id, buildText(utilityCommands.upimg.msgs.reply, imageUrl), message.wa_message, { expiration: message.expiration });
@@ -859,8 +856,7 @@ export async function efeitoaudioCommand(client, botInfo, message, group) {
         throw new Error(messageErrorCommandUsage(botInfo.prefix, message));
     }
     const effectSelected = message.text_command.trim().toLowerCase();
-    const quotedMessage = waUtil.ensureMessageParticipant(message.quotedMessage.wa_message, message.quotedMessage?.sender, message.chat_id);
-    const audioBuffer = await downloadMediaMessage(quotedMessage, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+    const audioBuffer = await downloadMediaMessage(message.quotedMessage.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     const replyAudioBuffer = await audioUtil.audioModified(audioBuffer, effectSelected);
     await waUtil.replyFileFromBuffer(client, message.chat_id, 'audioMessage', replyAudioBuffer, '', message.wa_message, { expiration: message.expiration, mimetype: 'audio/mpeg' });
 }
