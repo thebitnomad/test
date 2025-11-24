@@ -347,7 +347,7 @@ export async function fotobotCommand(client, botInfo, message, group) {
         throw new Error(adminCommands.fotobot.msgs.error_message);
     }
     let imageBuffer = await downloadMediaMessage(messageData, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
-    await waUtil.updateProfilePic(client, waUtil.getNormalizedBotId(botInfo, client), imageBuffer);
+    await waUtil.updateProfilePic(client, botInfo.host_number, imageBuffer);
     await waUtil.replyText(client, message.chat_id, adminCommands.fotobot.msgs.reply, message.wa_message, { expiration: message.expiration });
 }
 export async function nomebotCommand(client, botInfo, message, group) {

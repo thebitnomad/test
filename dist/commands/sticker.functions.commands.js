@@ -122,8 +122,8 @@ export async function autoSticker(client, botInfo, message, group) {
     else if (message.type == "videoMessage" && message.media?.seconds && message.media?.seconds > 9) {
         return;
     }
-    const messageSource = waUtil.ensureMessageParticipant(message.wa_message, message.sender, message.chat_id);
-    let mediaBuffer = await downloadMediaMessage(messageSource, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
+
+    let mediaBuffer = await downloadMediaMessage(message.wa_message, "buffer", {}, { logger: client.logger, reuploadRequest: client.updateMediaMessage });
     const authorText = buildText(stickerCommands.s.msgs.author_text, message.pushname);
     let stickerBuffer = await stickerUtil.createSticker(mediaBuffer, { pack: botInfo.name, author: authorText, fps: 9, type: 'resize' });
     await waUtil.sendSticker(client, message.chat_id, stickerBuffer, { expiration: message.expiration });
